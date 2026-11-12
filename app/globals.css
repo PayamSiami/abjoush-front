@@ -1,0 +1,147 @@
+@import "tailwindcss";
+
+/* ─── Abjoush coffee palette ───────────────────────────────────────────────
+   Single source of truth for brand colors. Tailwind v4 generates utilities
+   (bg-espresso, text-cream, border-latte …) from these tokens.             */
+@theme {
+  /* Brand ramp — warm, roasted, creamy */
+  --color-espresso: #2a1d16;      /* near-black brown — headings, active pills */
+  --color-roast: #5c2501;         /* deep roast — primary accent, footer band  */
+  --color-caramel: #8a5a33;       /* mid accent — links, highlights            */
+  --color-latte: #e7ddd0;         /* borders, dividers                         */
+  --color-cream: #f8f5f0;         /* section panels                            */
+  --color-foam: #fffdf9;          /* cards on cream                            */
+  --color-beige: #f1ece4;         /* subtle chip/button fills                  */
+  --color-beige-dark: #e3dbcf;    /* chip hover                                */
+  --color-clay: #6b6154;          /* secondary text                            */
+  --color-mocha: #8a7d6e;         /* muted text                                */
+  --color-ink: #1f1b17;           /* primary text                              */
+
+  /* Semantic */
+  --color-nik: #ecfdf5;           /* grade badge: نیک (green tint)   */
+  --color-nik-text: #065f46;
+  --color-motevaset: #fffbeb;     /* grade badge: متوسط (amber tint) */
+  --color-motevaset-text: #92400e;
+
+  /* Deep card fill used by StageRatio / StageConsumption panels */
+  --color-coffee-900: #1a1512;
+
+  /* Motion */
+  --animate-fade-in: fade-in 0.5s ease-in-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ─── Base ───────────────────────────────────────────────────────────────── */
+:root {
+  --background: #f4efe8;
+  --foreground: var(--color-ink);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-vazirmatn), system-ui, sans-serif;
+}
+
+/* Respect users who opt out of motion at the OS level */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ─── Utilities ──────────────────────────────────────────────────────────── */
+
+/* Hide scrollbar across browsers while preserving scroll functionality */
+.scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hidden::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* ─── Components ─────────────────────────────────────────────────────────── */
+@layer components {
+  /* Grade badges (used by ProductCard) */
+  .badge-grade-nik {
+    background: var(--color-nik);
+    color: var(--color-nik-text);
+  }
+  .badge-grade-motevaset {
+    background: var(--color-motevaset);
+    color: var(--color-motevaset-text);
+  }
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.hide-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+/* ─── CoffeeWizard range slider ───────────────────────────────────────────
+   Single canonical definition — touch-pan-y lets the page scroll vertically
+   while the thumb is dragged horizontally.                                  */
+.ratio-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  touch-action: pan-y;
+}
+
+.ratio-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 28px;
+  width: 28px;
+  border-radius: 50%;
+  background: var(--color-caramel);
+  border: 3px solid white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  margin-top: -12px; /* Centers the 28px thumb on the 4px track */
+  cursor: grab;
+}
+
+.ratio-range::-moz-range-thumb {
+  height: 28px;
+  width: 28px;
+  border-radius: 50%;
+  background: var(--color-caramel);
+  border: 3px solid white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  cursor: grab;
+}
+
+.ratio-range::-webkit-slider-runnable-track {
+  height: 4px;
+  background: var(--color-caramel);
+  opacity: 0.25;
+  border-radius: 2px;
+}
+
+.ratio-range::-moz-range-track {
+  height: 4px;
+  background: var(--color-caramel);
+  opacity: 0.25;
+  border-radius: 2px;
+}

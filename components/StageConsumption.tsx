@@ -28,6 +28,8 @@ export interface ConsumptionOption {
 interface StageConsumptionProps {
     selectedConsumptionId: number | null;
     onSelectConsumption: (id: number) => void;
+    /** Live options from the backend; falls back to CONSUMPTION_OPTIONS. */
+    consumptionOptions?: ConsumptionOption[];
 }
 
 export const CONSUMPTION_OPTIONS: ConsumptionOption[] = [
@@ -80,7 +82,9 @@ export const CONSUMPTION_OPTIONS: ConsumptionOption[] = [
 export default function StageConsumption({
     selectedConsumptionId,
     onSelectConsumption,
+    consumptionOptions,
 }: StageConsumptionProps) {
+    const options = consumptionOptions ?? CONSUMPTION_OPTIONS;
     const {
         scrollRef,
         scrollProgress,
@@ -153,7 +157,7 @@ export default function StageConsumption({
                     className="scrollbar-hidden flex cursor-grab flex-nowrap gap-4 overflow-auto scroll-px-4 pb-6 pt-2 active:cursor-grabbing"
                     onMouseDown={handleMouseDown}
                 >
-                    {CONSUMPTION_OPTIONS.map((option) => {
+                    {options.map((option) => {
                         const active = option.id === selectedConsumptionId;
                         return (
                             <button
@@ -244,7 +248,7 @@ export default function StageConsumption({
             {/* Live region for a11y */}
             <p className="sr-only" aria-live="polite">
                 {selectedConsumptionId
-                    ? `میزان مصرف انتخاب شده: ${CONSUMPTION_OPTIONS.find(
+                    ? `میزان مصرف انتخاب شده: ${options.find(
                         (o) => o.id === selectedConsumptionId
                     )?.label ?? ""
                     }`

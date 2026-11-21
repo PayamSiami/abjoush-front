@@ -26,6 +26,8 @@ interface StageTasteProps {
     selectedTasteId: number | null;
     onSelectTaste: (id: number) => void;
     onEditDevice: () => void;
+    /** Live options from the backend; falls back to TASTE_OPTIONS. */
+    tasteOptions?: TasteOption[];
 }
 
 export const TASTE_OPTIONS: TasteOption[] = [
@@ -47,8 +49,10 @@ export default function StageTaste({
     selectedTasteId,
     onSelectTaste,
     onEditDevice,
+    tasteOptions,
 }: StageTasteProps) {
-    const selectedTaste = TASTE_OPTIONS.find((t) => t.id === selectedTasteId);
+    const options = tasteOptions ?? TASTE_OPTIONS;
+    const selectedTaste = options.find((t) => t.id === selectedTasteId);
     const draggedRef = useRef(false);
 
     const {
@@ -156,7 +160,7 @@ export default function StageTaste({
                     className="scrollbar-hidden flex cursor-grab flex-nowrap gap-4 overflow-auto scroll-px-4 pb-6 pt-2 active:cursor-grabbing"
                     onMouseDown={handleMouseDown}
                 >
-                    {TASTE_OPTIONS.map((taste) => {
+                    {options.map((taste) => {
                         const active = taste.id === selectedTasteId;
                         return (
                             <button

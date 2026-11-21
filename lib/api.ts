@@ -1,12 +1,19 @@
 /**
  * Typed client for the Django dashboard API.
  *
- * Requests go to the same origin (`/dashboard/api/...`) and Next.js rewrites
- * them to Django (see `next.config.ts`), so fetch can run identically on the
- * server and in the browser without CORS handling or absolute URLs.
+ * Two transports, one type surface:
+ * - Server Components call Django directly. A relative URL cannot be resolved
+ *   during server rendering, so the absolute Django origin is required here.
+ * - The browser calls the same-origin `/dashboard/api/...` path, which
+ *   Next.js rewrites to Django (see `next.config.ts`), avoiding CORS.
  */
 
-const API_BASE = "/dashboard/api";
+const PROXY_PATH = "/dashboard/api";
+const DJANGO_ORIGIN = process.env.DJANGO_API_ORIGIN ?? "http://127.0.0.1:8000";
+
+/** Django's absolute URL on the server, same-origin proxy path in the browser. */
+const API_BASE =
+  typeof window === "undefined" ? `${DJANGO_ORIGIN}${PROXY_PATH}` : PROXY_PATH;
 
 /* ─── Payload shapes (mirror dashboard/views.py) ─────────────────────────── */
 
@@ -64,7 +71,14 @@ export class DashboardApiError extends Error {
 }
 
 async function getJson<T>(endpoint: string): Promise<T> {
-  const url = `${API_BASE}${endpoint}`;
+  // In the browser, `/dashboard/api/foo/` is normalised by Next.js to the
+  // no-trailing-slash form before the rewrite runs, costing one redirect.
+  // Asking for the exact canonical form that resolves in a single hop keeps
+  // the 30s refresh loop cheap.
+  const suffix =
+    typeof window === "undefined" ? endpoint : endpoint.replace(/\/$/, "");
+
+  const url = `${API_BASE}${suffix}`;
 
   let response: Response;
   try {

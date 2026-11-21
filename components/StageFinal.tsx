@@ -59,6 +59,10 @@ interface SummaryProps {
     arabica: number;
     selectedTasteLabel?: string;
     selectedConsumptionRange?: string;
+    /** Blend name returned by the backend recommender. */
+    blendLabel?: string;
+    /** True while the recommendation request is in flight. */
+    recommending?: boolean;
     onEditDevice?: () => void;
     onEditOrigin?: () => void;
     onEditTaste?: () => void;
@@ -77,6 +81,8 @@ export default function StageFinal({
     arabica,
     selectedTasteLabel,
     selectedConsumptionRange,
+    blendLabel,
+    recommending,
     onEditDevice,
     onEditOrigin,
     onEditTaste,
@@ -113,7 +119,9 @@ export default function StageFinal({
                         <div className="flex flex-row gap-4">
                             <div className="flex flex-1 flex-col text-right">
                                 <div className="mb-1 flex items-center justify-start gap-2">
-                                    <h2 className="text-lg font-extrabold text-ink">قهوه کلمبیا</h2>
+                                    <h2 className="text-lg font-extrabold text-ink">
+                                        {recommending ? "در حال پیشنهاد…" : selectedOrigin?.name ?? blendLabel ?? "قهوه پیشنهادی"}
+                                    </h2>
                                     <span className="rounded-full bg-ink/5 px-2 py-0.5 text-[0.6rem] font-bold text-ink/70">
                                         تازه‌رست
                                     </span>

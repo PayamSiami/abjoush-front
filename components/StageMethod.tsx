@@ -15,6 +15,8 @@ import { ScrollButton } from "./scroll-button";
 interface StageMethodProps {
     selectedMethod: BrewMethod | null;
     onSelectMethod: (method: BrewMethod) => void;
+    /** Live options from the backend; falls back to BREW_METHODS. */
+    methodOptions?: BrewMethod[];
 }
 
 /* ------------------------------------------------------------------ *
@@ -24,7 +26,9 @@ interface StageMethodProps {
 export default function StageMethod({
     selectedMethod,
     onSelectMethod,
+    methodOptions,
 }: StageMethodProps) {
+    const methods = methodOptions ?? BREW_METHODS;
     const {
         scrollRef,
         scrollProgress,
@@ -87,7 +91,7 @@ export default function StageMethod({
                     className="scrollbar-hidden flex cursor-grab flex-nowrap gap-4 overflow-auto scroll-px-4 pb-6 pt-2 active:cursor-grabbing"
                     onMouseDown={handleMouseDown}
                 >
-                    {BREW_METHODS.map((method) => {
+                    {methods.map((method) => {
                         const active = selectedMethod?.id === method.id;
                         return (
                             <button

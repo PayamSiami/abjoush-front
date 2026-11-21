@@ -41,7 +41,8 @@ interface StageOriginProps {
     selectedOrigin: Origin | null;
     onSelectOrigin: (origin: Origin) => void;
     isOriginA?: boolean
-
+    /** Live options from the backend; falls back to ORIGINS. */
+    originOptions?: Origin[];
 }
 
 /* ------------------------------------------------------------------ *
@@ -51,14 +52,16 @@ interface StageOriginProps {
 export default function StageOrigin({
     selectedOrigin,
     onSelectOrigin,
-    isOriginA
+    isOriginA,
+    originOptions,
 }: StageOriginProps) {
+    const origins = originOptions ?? ORIGINS;
     const [focusedOriginId, setFocusedOriginId] = useState<number | null>(
-        selectedOrigin?.id ?? ORIGINS[0]?.id ?? null
+        selectedOrigin?.id ?? origins[0]?.id ?? null
     );
 
     const focusedOrigin =
-        ORIGINS.find((o) => o.id === focusedOriginId) ?? ORIGINS[0] ?? null;
+        origins.find((o) => o.id === focusedOriginId) ?? origins[0] ?? null;
 
     return (
         <div className="absolute inset-x-0 bottom-[5%] z-10 flex max-h-[min(68vh,560px)] flex-col gap-3 overflow-hidden px-3 sm:inset-x-auto sm:left-1/2 sm:max-h-none sm:w-full sm:max-w-2xl sm:-translate-x-1/2 sm:px-0">
@@ -134,7 +137,7 @@ export default function StageOrigin({
                 aria-label="خاستگاه عربیکا را انتخاب کنید"
                 className="flex min-h-0 flex-1 snap-x snap-mandatory items-stretch gap-3 overflow-x-auto overscroll-x-contain scroll-px-3 px-1 pb-3 sm:px-4 hide-scrollbar"
             >
-                {ORIGINS.map((origin) => {
+                {origins.map((origin) => {
                     const isFocused = focusedOriginId === origin.id;
                     const isSelected = selectedOrigin?.id === origin.id;
                     return (

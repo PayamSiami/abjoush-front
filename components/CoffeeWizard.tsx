@@ -4,6 +4,14 @@ import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { type BrewMethod, type Origin } from "@/lib/content";
+import {
+    getWizardOptions,
+    postRecommend,
+    type WizardOptions,
+    type RecommendResult,
+    type ApiTaste,
+    type ApiConsumption,
+} from "@/lib/store-api";
 import { CoffeeCupIcon } from "./icon/CoffeeCupIcon";
 import { ChevronIcon } from "./icon/ChevronIcon";
 import StageCheckout from "./StageCheckout";
@@ -81,6 +89,9 @@ export default function CoffeeWizard({ onClose, autoFullscreen = false }: Coffee
     const [muted, setMuted] = useState(false);
     const [startSpeaking, setStartSpeaking] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [wizardOptions, setWizardOptions] = useState<WizardOptions | null>(null);
+    const [recommendation, setRecommendation] = useState<RecommendResult | null>(null);
+    const [recommendFailed, setRecommendFailed] = useState(false);
 
     const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
     const currentAudio = useRef<HTMLAudioElement | null>(null);
@@ -99,6 +110,19 @@ export default function CoffeeWizard({ onClose, autoFullscreen = false }: Coffee
     };
 
     useEffect(() => () => (clearTimers(), stopAudio()), []);
+
+    /* Pull wizard carousels from Django; the bundled constants stay as fallback. */
+    useEffect(() => {
+        let cancelled = false;
+        getWizardOptions()
+            .then((options) => {
+                if (!cancelled) setWizardOptions(options);
+            })
+            .catch(() => { /* backend down — stages keep their built-in data */ });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     /* ---------- Fullscreen handling ---------- */
     useEffect(() => {
@@ -154,10 +178,39 @@ export default function CoffeeWizard({ onClose, autoFullscreen = false }: Coffee
     const arabica = 100 - robusta;
     const currentStepIndex = STEPS.findIndex((s) => s.id === stage);
     const selectedOrigin = isOriginA ? selectedOriginA : selectedOriginR;
-    const selectedTasteLabel = TASTE_OPTIONS.find((t) => t.id === selectedTasteId)?.name;
-    const selectedConsumptionRange = CONSUMPTION_OPTIONS.find(
+    const tasteOptions: ApiTaste[] | undefined = wizardOptions?.tastes;
+    const consumptionOptions: ApiConsumption[] | undefined = wizardOptions?.consumption;
+    const selectedTaste = (tasteOptions ?? TASTE_OPTIONS).find((t) => t.id === selectedTasteId);
+    const selectedTasteLabel = selectedTaste?.name;
+    const selectedConsumptionRange = (consumptionOptions ?? CONSUMPTION_OPTIONS).find(
         (c) => c.id === selectedConsumptionId
     )?.range;
+
+    /* Ask the backend for a blend once the user reaches the summary step. */
+    useEffect(() => {
+        if (stage !== 6) return;
+        let cancelled = false;
+        postRecommend({
+            robusta,
+            taste_slug:
+                selectedTaste && "slug" in selectedTaste
+                    ? String(selectedTaste.slug)
+                    : undefined,
+            method_slug: selectedMethod?.slug,
+            consumption_id: selectedConsumptionId ?? undefined,
+        })
+            .then((result) => {
+                if (!cancelled) setRecommendation(result);
+            })
+            .catch(() => {
+                if (!cancelled) setRecommendFailed(true);
+            });
+        return () => {
+            cancelled = true;
+        };
+        // Recompute only when the summary stage is entered.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [stage]);
 
     function narrate(src: string) {
         stopAudio();
@@ -170,6 +223,10 @@ export default function CoffeeWizard({ onClose, autoFullscreen = false }: Coffee
         after(500, () => {
             setStartSpeaking(true);
             narrate(src);
+            if (nextStage === 6) {
+                setRecommendation(null);
+                setRecommendFailed(false);
+            }
             setStage(nextStage);
             if (nextStage === 4 || nextStage === 6) {
                 after(2500, () => setStartSpeaking(false));
@@ -403,7 +460,11 @@ export default function CoffeeWizard({ onClose, autoFullscreen = false }: Coffee
 
             {/* ---------- Stage panels ---------- */}
             {stage === 1 && (
-                <StageMethod selectedMethod={selectedMethod} onSelectMethod={setSelectedMethod} />
+                <StageMethod
+                    selectedMethod={selectedMethod}
+                    onSelectMethod={setSelectedMethod}
+                    methodOptions={wizardOptions?.methods}
+                />
             )}
             {stage === 2 && (
                 <StageRatio
@@ -420,11 +481,13 @@ export default function CoffeeWizard({ onClose, autoFullscreen = false }: Coffee
                         selectedOrigin={selectedOriginA}
                         onSelectOrigin={setSelectedOriginA}
                         isOriginA
+                        originOptions={wizardOptions?.origins}
                     />
                     :
                     <StageOrigin
                         selectedOrigin={selectedOriginR}
                         onSelectOrigin={setSelectedOriginR}
+                        originOptions={wizardOptions?.origins}
                     />
             )}
             {stage === 4 && (
@@ -435,22 +498,26 @@ export default function CoffeeWizard({ onClose, autoFullscreen = false }: Coffee
                     selectedTasteId={selectedTasteId}
                     onSelectTaste={setSelectedTasteId}
                     onEditDevice={() => setStage(1)}
+                    tasteOptions={tasteOptions}
                 />
             )}
             {stage === 5 && (
                 <StageConsumption
                     selectedConsumptionId={selectedConsumptionId}
                     onSelectConsumption={setSelectedConsumptionId}
+                    consumptionOptions={consumptionOptions}
                 />
             )}
             {stage === 6 && (
                 <StageFinal
                     selectedMethod={selectedMethod}
-                    selectedOrigin={selectedOriginA}
+                    selectedOrigin={recommendation?.origins[0] ?? selectedOriginA}
                     robusta={robusta}
                     arabica={arabica}
                     selectedTasteLabel={selectedTasteLabel}
                     selectedConsumptionRange={selectedConsumptionRange}
+                    blendLabel={recommendation?.blend.label}
+                    recommending={recommendation === null && !recommendFailed}
                     onEditDevice={() => setStage(1)}
                     onEditOrigin={() => setStage(3)}
                     onEditTaste={() => setStage(4)}
